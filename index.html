@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>跃动精灵(canvas实现)</title>
+    <style>
+        html,body{
+            margin:0;
+            padding:0;
+            width: 100%;
+            height:100%;
+            /*去掉浏览器默认垂直和水平滑动条*/
+            overflow:hidden;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+</body>
+</html>
+<script>
+   var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    var w = (canvas.width = document.documentElement.clientWidth);
+    var h = (canvas.height = document.documentElement.clientHeight);
+    var offsetX = 0;
+    var offsetY = 0;
+    //  x 横坐标
+    //  y 纵坐标
+    //  vx 沿横轴方向的速度 （可以为负数）
+    //  vy 沿纵轴方向的速度（可为负数）
+    //  size 小球的半径
+    //  color 颜色
+
+    function Ball(x, y, vx, vy, size, color) {
+      this.x = x;
+      this.y = y;
+      this.vx = vx;
+      this.vy = vy;
+      this.size = size;
+      this.color = color;
+    }
+
+    Ball.prototype.draw = function () {
+      // 开始绘制（路径）
+      ctx.beginPath();
+      ctx.fillStyle = this.color;
+      ctx.shadowColor='yellow'
+      ctx.shadowBlur=10
+      // ctx.shadowOffsetX=1
+      // ctx.shadowOffsetY=1 
+      ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+      // 填充
+      ctx.fill();
+    };
+
+    Ball.prototype.update = function () {
+      // 检查当前小球的X坐标加上当前的小球半径是否大于浏览器宽度（右边缘碰撞检测）
+      // 检查当前小球的X坐标加上当前的小球半径是否小于0（左边缘碰撞检测）
+      // 上述的两个条件如果满足其中一个，就需要调转方向（X轴速度vx设置为当前vx的相反数）
+      if (this.x + this.size >= w || this.x - this.size <= 0) {
+        this.vx = -this.vx;
+      }
+
+      // 检查当前小球的Y坐标加上当前的小球半径是否大于浏览器高度（下边缘碰撞检测）
+      // 检查当前小球的Y坐标加上当前的小球半径是否小于0（上边缘碰撞检测）
+      // 上述的两个条件如果满足其中一个，就需要调转方向（Y轴速度vy设置为当前vy的相反数）
+      if (this.y + this.size >= h || this.y - this.size <= 0) {
+        this.vy = -this.vy;
+      }
+
+      // 根据速度值改动小球的坐标
+      this.x += this.vx;
+      this.y += this.vy;
+    };
+
+    function random(min, max) {
+      let num = Math.floor(Math.random() * (max - min) + min);
+      if (num === 0) {
+        num = Math.random() * Math.min([w, h]);
+      }
+      return num;
+    }
+    var list = [];
+    for (let i = 0; i <= 100; i++) {
+      let circle = new Ball(random(0, w), random(0, h), random(-10, 10) * (1 / 10.0), random(-10, 10) * (1 / 10.0), 2, '#fff');
+      list.push(circle);
+    }
+
+    var arr = [];
+    function circle(x, y, r) {
+      this.x = x;
+      this.y = y;
+      this.r = r;
+      this.alpha=1;
+      this.color = 'Gold';
+          /* 圆的移动方向 */
+      if(offsetX - x>=0&&offsetY - y>=0){
+        this.xMove=Math.random()*2
+        this.yMove=Math.random()*2
+      }else if(offsetX - x<0&&offsetY - y>=0 ){
+        this.xMove=Math.random()*-2
+        this.yMove=Math.random()*2
+      }else if(offsetX - x>=0&&offsetY - y<0 ){
+        this.xMove=Math.random()*2
+        this.yMove=Math.random()*-2
+      }else{
+        this.xMove=Math.random()*-2
+        this.yMove=Math.random()*-2
+      }
+      // this.xMove = offsetX - x;
+      // this.yMove = offsetY - y;
+      /* 向arr数组末尾添加这个元素 */
+      if (this) {
+        arr.push(this);
+      }
+    }
+
+    circle.prototype.updated = function () {
+      this.x = this.x + this.xMove;
+      this.y = this.y + this.yMove;
+      this.r = this.r - 0.2;
+      if (this.r < 0) {
+        this.remove();
+      }
+    };
+
+    circle.prototype.remove = function () {
+      for (let i = 0; i < arr.length; i++) {
+        if (this == arr[i]) {
+          arr.splice(i, 1);
+        }
+      }
+    };
+    /* 渲染小圆 */
+    circle.prototype.render = function () {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, 2 * 3.14, false);
+      ctx.fillStyle = this.color;
+       ctx.shadowColor='white'
+      ctx.shadowBlur=8
+      // ctx.shadowOffsetX=1
+      // ctx.shadowOffsetY=1 
+      ctx.fill();
+    };
+
+
+    function animation() {
+      ctx.globalCompositeOperation = 'source-over';
+      var lingrad = ctx.createLinearGradient(0, 0, 0, h);
+      lingrad.addColorStop(0, '#ff9999');
+      lingrad.addColorStop(0.5, '#ccBBBB');
+      lingrad.addColorStop(1, '#87ceeb');
+      ctx.fillStyle = lingrad;
+      ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < list.length; i++) {
+        list[i].draw();
+        list[i].update();
+      }
+      for (let i = 0; i < arr.length; i++) {
+        arr[i].updated();
+        if (arr.length != 0 && arr[i]?.render()) {
+          arr[i].render();
+        }
+      }
+
+   
+      window.requestAnimationFrame(animation);
+    }
+    addEventListener('resize', () => {
+      w = canvas.width = document.documentElement.clientWidth;
+      h = canvas.height = document.documentElement.clientHeight;
+    });
+
+    animation();
+
+    canvas.addEventListener('mousemove', (e) => {
+      new circle(e.offsetX, e.offsetY, Math.random() * 8);
+      offsetX = e.offsetX;
+      offsetY = e.offsetY;
+    });
+</script>
